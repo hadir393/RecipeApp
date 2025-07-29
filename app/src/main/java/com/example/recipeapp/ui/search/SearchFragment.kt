@@ -1,6 +1,8 @@
 package com.example.recipeapp.ui.search
 
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -25,9 +27,8 @@ class SearchFragment : Fragment() {
     ): View {
         binding = FragmentSearchBinding.inflate(inflater, container, false)
 
-        // نجهز الـ Adapter مع الضغط على العنصر
+        // إعداد الـ Adapter مع الضغط على العنصر
         adapter = SearchAdapter { recipe ->
-            // نفتح RecipeDetailFragment ونبعت البيانات
             val bundle = Bundle().apply {
                 putString("idMeal", recipe.idMeal)
                 putString("strMeal", recipe.strMeal)
@@ -46,7 +47,7 @@ class SearchFragment : Fragment() {
         binding.recyclerSearch.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerSearch.adapter = adapter
 
-        // Search Button
+        // زر البحث
         binding.btnSearch.setOnClickListener {
             val query = binding.etSearch.text.toString()
             if (query.isNotEmpty()) {
@@ -56,15 +57,39 @@ class SearchFragment : Fragment() {
             }
         }
 
+        // عند أول مرة تفتح، لو مفيش كلمة مكتوبة هنجيب وصفات مقترحة
+        if (binding.etSearch.text.toString().isEmpty()) {
+            loadSuggestedRecipes()
+        }
+
+        // البحث أثناء الكتابة
+        binding.etSearch.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val query = s.toString()
+                if (query.isNotEmpty()) {
+                    searchRecipes(query)
+                } else {
+                    loadSuggestedRecipes()
+                }
+            }
+
+            override fun afterTextChanged(s: Editable?) {}
+        })
+
         return binding.root
     }
 
-    // هنا هنعمل البحث تلقائي لو فيه كلمة مكتوبة لما نرجع للشاشة دي
+    // لما نرجع للشاشة دي تاني
     override fun onResume() {
         super.onResume()
         val query = binding.etSearch.text.toString()
         if (query.isNotEmpty()) {
             searchRecipes(query)
+        } else {
+            // لو مفيش كلمة بحث يعرض المقترحات
+            loadSuggestedRecipes()
         }
     }
 
@@ -74,6 +99,22 @@ class SearchFragment : Fragment() {
         lifecycleScope.launch {
             try {
                 val response = api.searchMeals(query)
+                val recipes = response.meals ?: emptyList()
+                adapter.submitList(recipes)
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // دالة لعرض وصفات مقترحة لو لسه مفيش بحث
+    private fun loadSuggestedRecipes() {
+        val api = ApiService.getInstance()
+
+        lifecycleScope.launch {
+            try {
+                // ممكن نجيب وصفات بكلمة افتراضية زي "pasta"
+                val response = api.searchMeals("pasta")
                 val recipes = response.meals ?: emptyList()
                 adapter.submitList(recipes)
             } catch (e: Exception) {

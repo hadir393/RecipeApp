@@ -4,11 +4,13 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.example.recipeapp.R
 import com.example.recipeapp.databinding.ItemFavoriteBinding
 import com.example.recipeapp.data.database.FavoriteRecipe
 
 class FavoriteAdapter(
-    private val onDeleteClick: (FavoriteRecipe) -> Unit
+    private val onDeleteClick: (FavoriteRecipe) -> Unit,
+    private val onItemClick: (FavoriteRecipe) -> Unit // 👈 إضافة كولباك جديد
 ) : RecyclerView.Adapter<FavoriteAdapter.FavViewHolder>() {
 
     private var recipes = listOf<FavoriteRecipe>()
@@ -23,11 +25,27 @@ class FavoriteAdapter(
 
     override fun onBindViewHolder(holder: FavViewHolder, position: Int) {
         val recipe = recipes[position]
-        holder.binding.tvTitle.text = recipe.title
-        Glide.with(holder.itemView.context).load(recipe.imageUrl).into(holder.binding.ivImage)
 
+        // تحميل البيانات في الـ views
+        holder.binding.tvTitle.text = recipe.title
+        Glide.with(holder.itemView.context)
+            .load(recipe.imageUrl)
+            .into(holder.binding.ivImage)
+
+        // تعديل الأيقونة عشان تبقى delete باللون الأحمر
+        holder.binding.btnDelete.setImageResource(R.drawable.ic_delete)
+        holder.binding.btnDelete.setColorFilter(
+            holder.itemView.context.getColor(android.R.color.holo_red_dark)
+        )
+
+        // Action عند الضغط على زرار الحذف
         holder.binding.btnDelete.setOnClickListener {
             onDeleteClick(recipe)
+        }
+
+        // 👈 فتح التفاصيل عند الضغط على العنصر
+        holder.itemView.setOnClickListener {
+            onItemClick(recipe)
         }
     }
 

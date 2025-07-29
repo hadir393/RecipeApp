@@ -7,8 +7,10 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.recipeapp.databinding.FragmentFavoriteBinding
 import com.example.recipeapp.FavoriteViewModel
+import com.example.recipeapp.R
+import com.example.recipeapp.databinding.FragmentFavoriteBinding
+import com.example.recipeapp.ui.detail.RecipeDetailFragment
 
 class FavoriteFragment : Fragment() {
     private lateinit var binding: FragmentFavoriteBinding
@@ -21,7 +23,29 @@ class FavoriteFragment : Fragment() {
     ): View {
         binding = FragmentFavoriteBinding.inflate(inflater, container, false)
 
-        adapter = FavoriteAdapter { recipe -> viewModel.delete(recipe) }
+        // تمرير كولباكين: الحذف وفتح التفاصيل
+        adapter = FavoriteAdapter(
+            onDeleteClick = { recipe ->
+                viewModel.deleteById(recipe.recipeId)
+            },
+            onItemClick = { recipe ->
+                // فتح صفحة التفاصيل عند الضغط على العنصر
+                val bundle = Bundle().apply {
+                    putString("idMeal", recipe.recipeId)
+                    putString("strMeal", recipe.title)
+                    putString("strMealThumb", recipe.imageUrl)
+                    putString("strInstructions", "No instructions available")
+                }
+                val detailFragment = RecipeDetailFragment()
+                detailFragment.arguments = bundle
+
+                parentFragmentManager.beginTransaction()
+                    .replace(R.id.fragment_container, detailFragment)
+                    .addToBackStack(null)
+                    .commit()
+            }
+        )
+
         binding.recyclerFavorites.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerFavorites.adapter = adapter
 

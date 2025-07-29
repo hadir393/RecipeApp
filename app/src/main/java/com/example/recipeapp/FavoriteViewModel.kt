@@ -21,7 +21,16 @@ class FavoriteViewModel(application: Application) : AndroidViewModel(application
         repository.insert(recipe)
     }
 
-    fun delete(recipe: FavoriteRecipe) = viewModelScope.launch {
-        repository.delete(recipe)
+//    fun delete(recipe: FavoriteRecipe) = viewModelScope.launch {
+//        repository.delete(recipe)
+//    }
+
+    // دالة التحقق من وجود الوصفة في المفضلة
+    suspend fun exists(id: String): Boolean {
+        return repository.exists(id)
     }
+    fun deleteById(id: String) = viewModelScope.launch {
+        repository.deleteById(id)
+    }
+
 }
